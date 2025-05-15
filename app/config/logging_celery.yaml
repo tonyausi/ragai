@@ -1,0 +1,41 @@
+version: 1
+disable_existing_loggers: false
+
+formatters:
+  simple:
+    format: "%(asctime)s %(levelname)s %(name)s: %(message)s"
+
+handlers:
+  celery_console:
+    class: logging.StreamHandler
+    level: INFO
+    formatter: simple
+    stream: ext://sys.stdout
+
+  celery_file:
+    class: logging.handlers.RotatingFileHandler
+    level: INFO
+    formatter: simple
+    filename: logs/celery.log
+    maxBytes: 10485760
+    backupCount: 5
+
+loggers:
+  celery:
+    handlers: [celery_console, celery_file]
+    level: INFO
+    propagate: false
+
+  celery.task:
+    handlers: [celery_console, celery_file]
+    level: INFO
+    propagate: false
+
+  app.tasks:
+    handlers: [celery_console, celery_file]
+    level: INFO
+    propagate: true
+
+root:
+  handlers: [celery_console]
+  level: WARNING

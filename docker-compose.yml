@@ -1,0 +1,77 @@
+services:
+  redis:
+    image: redis:7.4.3-alpine
+    ports:
+      - "6380:6380" # Expose Redis on port 6380 as rafflow is using 6379
+    networks:
+      - ragflow
+    volumes:
+      - redis_data:/data # This mounts the named volume correctly
+
+  api:
+    container_name: ragaiapi
+    environment:
+      MODULE_NAME: ragaiapi.app.main
+      AUTORELOAD: 1
+      DOCKER: "True"
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      args:
+        dev: "True"
+    restart: on-failure
+    depends_on:
+      - redis
+    volumes:
+      - ./app:/ragaiapi/app
+      - ./logs:/ragaiapi/logs
+      - ./processed_files:/ragaiapi/processed_files
+      - ./README.md:/ragaiapi/README.md
+      - ./tests:/ragaiapi/tests
+      - ./conftest.py:/ragaiapi/conftest.py
+      - ./pytest.ini:/ragaiapi/pytest.ini
+      - ./.flake8:/ragaiapi/.flake8
+    ports:
+      - "10103:10103"
+    env_file:
+      - .env
+    networks:
+      - ragflow
+    hostname: ragaiapi
+
+  celery-worker:
+    build: .
+    command: celery -A app.tasks.celery_worker.celery_app worker --loglevel=info
+    env_file:
+      - .env
+    networks:
+      - ragflow
+    depends_on:
+      - redis
+    volumes:
+      - ./logs:/ragaiapi/logs
+      - ./processed_files:/ragaiapi/processed_files
+
+  flower:
+    build:
+      context: .
+      dockerfile: Dockerfile # your own Dockerfile
+    container_name: flower
+    command: celery -A app.tasks.celery_worker.celery_app flower --port=5555
+    ports:
+      - "5555:5555"
+    environment:
+      - FLOWER_BASIC_AUTH=user:password
+    env_file:
+      - .env # load sensitive/env vars needed by Pydantic Settings
+    depends_on:
+      - redis
+    networks:
+      - ragflow
+
+networks:
+  ragflow:
+    driver: bridge
+
+volumes:
+  redis_data: {}

@@ -1,0 +1,19 @@
+# To ensure app dependencies are ported from your virtual environment/host machine into your container, run 'pip freeze > requirements.txt' in the terminal to overwrite this file
+fastapi[all]==0.115.11
+uvicorn[standard]==0.34.0
+requests==2.32.3
+celery>=5.0.0
+redis>=4.0.0
+jinja2==3.1.6
+pytest==8.0.1
+openai==1.65.4
+ragflow-sdk==0.17.1
+pandas==2.2.3
+numpy==2.2.5
+openpyxl==3.1.5
+XlsxWriter==3.2.2
+python-multipart==0.0.20
+python-dotenv==1.1.0
+pydantic-settings==2.9.1
+pyyaml==6.0.2
+flower==2.0.1
