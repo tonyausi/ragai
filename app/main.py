@@ -18,6 +18,7 @@ app.add_middleware(
     allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 # Include the router with optional prefix
 # Include the router with optional prefix

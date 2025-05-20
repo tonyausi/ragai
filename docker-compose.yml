@@ -2,9 +2,9 @@ services:
   redis:
     image: redis:7.4.3-alpine
     ports:
-      - "6380:6380" # Expose Redis on port 6380 as rafflow is using 6379
+      - "6380:6379" # Expose Redis on port 6380 as rafflow is using 6379
     networks:
-      - ragflow
+      - ragainetwork
     volumes:
       - redis_data:/data # This mounts the named volume correctly
 
@@ -36,7 +36,7 @@ services:
     env_file:
       - .env
     networks:
-      - ragflow
+      - ragainetwork
     hostname: ragaiapi
 
   celery-worker:
@@ -45,7 +45,7 @@ services:
     env_file:
       - .env
     networks:
-      - ragflow
+      - ragainetwork
     depends_on:
       - redis
     volumes:
@@ -67,10 +67,10 @@ services:
     depends_on:
       - redis
     networks:
-      - ragflow
+      - ragainetwork
 
 networks:
-  ragflow:
+  ragainetwork:
     driver: bridge
 
 volumes:
