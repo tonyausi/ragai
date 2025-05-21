@@ -73,7 +73,7 @@ def process_excel(self, filename: str, contents: bytes):
                 responses.append([question_raw, single_answer])
 
             # Update progress
-            task_result.progress = (i + 1) / total_questions * 100
+            task_result.progress = round((i + 1) / total_questions * 100, 1)
             task_result.status = TaskStatus.PROCESSING
 
             # Update Celery task state
