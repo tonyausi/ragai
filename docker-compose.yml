@@ -2,31 +2,39 @@ services:
   redis:
     image: redis:7.4.3-alpine
     ports:
-      - "6380:6379" # Expose Redis on port 6380 as rafflow is using 6379
+      - "6380:6379" # Expose Redis on port 6380 (host:container)
     networks:
       - ragainetwork
     volumes:
-      - redis_data:/data # This mounts the named volume correctly
+      - redis_data:/data # Persist Redis data
+    healthcheck: # Optional but recommended
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   api:
     container_name: ragaiapi
-    environment:
-      MODULE_NAME: ragaiapi.app.main
-      AUTORELOAD: 1
-      DOCKER: "True"
     build:
       context: .
       dockerfile: ./Dockerfile
       args:
-        dev: "True"
+        USER_ID: 1000 # Match host user "ragai" UID
+        GROUP_ID: 1000 # Match host user "ragai" GID
+    environment:
+      MODULE_NAME: ragaiapi.app.main
+      AUTORELOAD: 1
+      DOCKER: "True"
     restart: on-failure
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy # Wait for Redis to be ready
     volumes:
-      - ./app:/ragaiapi/app
       - ./logs:/ragaiapi/logs
       - ./processed_files:/ragaiapi/processed_files
-      - ./README.md:/ragaiapi/README.md
+      # Avoid mounting app code in production (interferes with Dockerfile COPY)
+      # For development only:
+      - ./app:/ragaiapi/app
       - ./tests:/ragaiapi/tests
       - ./conftest.py:/ragaiapi/conftest.py
       - ./pytest.ini:/ragaiapi/pytest.ini
@@ -37,10 +45,15 @@ services:
       - .env
     networks:
       - ragainetwork
+    user: "1000:1000" # Match UID/GID of host user "ragai"
     hostname: ragaiapi
 
   celery-worker:
-    build: .
+    build:
+      context: .
+      args:
+        USER_ID: 1000
+        GROUP_ID: 1000
     command: celery -A app.tasks.celery_worker.celery_app worker --loglevel=info
     env_file:
       - .env
@@ -55,23 +68,27 @@ services:
   flower:
     build:
       context: .
-      dockerfile: Dockerfile # your own Dockerfile
+      dockerfile: Dockerfile
+      args:
+        USER_ID: 1000
+        GROUP_ID: 1000
     container_name: flower
     command: celery -A app.tasks.celery_worker.celery_app flower --port=5555
     ports:
       - "5555:5555"
     environment:
-      - FLOWER_BASIC_AUTH=user:password
+      - FLOWER_BASIC_AUTH=user:password # Replace with secure credentials
     env_file:
-      - .env # load sensitive/env vars needed by Pydantic Settings
+      - .env
     depends_on:
       - redis
     networks:
       - ragainetwork
+    user: "1000:1000"
 
 networks:
   ragainetwork:
     driver: bridge
 
 volumes:
-  redis_data: {}
+  redis_data: # Named volume for Redis persistence

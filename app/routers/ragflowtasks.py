@@ -105,6 +105,7 @@ async def download_file(task_id: str):
     headers = {
         "Content-Disposition": "attachment; filename=SeismaResponse.xlsx",
         "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "Access-Control-Allow-Origin": "*",
     }
     try:
         return FileResponse(
