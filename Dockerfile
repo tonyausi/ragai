@@ -3,8 +3,8 @@ FROM python:3.10-slim
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-ARG USER_ID=1000
-ARG GROUP_ID=1000
+ARG USER_ID=10103
+ARG GROUP_ID=10103
 
 # Install system dependencies as root
 RUN apt-get update && apt-get install -y --no-install-recommends \

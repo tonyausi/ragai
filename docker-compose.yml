@@ -19,8 +19,8 @@ services:
       context: .
       dockerfile: ./Dockerfile
       args:
-        USER_ID: 1000 # Match host user "ragai" UID
-        GROUP_ID: 1000 # Match host user "ragai" GID
+        USER_ID: 10103 # Match host user "ragai" UID
+        GROUP_ID: 10103 # Match host user "ragai" GID
     environment:
       MODULE_NAME: ragaiapi.app.main
       AUTORELOAD: 1
@@ -45,15 +45,15 @@ services:
       - .env
     networks:
       - ragainetwork
-    user: "1000:1000" # Match UID/GID of host user "ragai"
+    user: "10103:10103" # Match UID/GID of host user "ragai"
     hostname: ragaiapi
 
   celery-worker:
     build:
       context: .
       args:
-        USER_ID: 1000
-        GROUP_ID: 1000
+        USER_ID: 10103
+        GROUP_ID: 10103
     command: celery -A app.tasks.celery_worker.celery_app worker --loglevel=info
     env_file:
       - .env
@@ -70,8 +70,8 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        USER_ID: 1000
-        GROUP_ID: 1000
+        USER_ID: 10103
+        GROUP_ID: 10103
     container_name: flower
     command: celery -A app.tasks.celery_worker.celery_app flower --port=5555
     ports:
@@ -84,7 +84,7 @@ services:
       - redis
     networks:
       - ragainetwork
-    user: "1000:1000"
+    user: "10103:10103"
 
 networks:
   ragainetwork:
