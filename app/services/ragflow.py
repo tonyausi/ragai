@@ -1,4 +1,5 @@
 import logging
+import re
 import pandas as pd
 from io import BytesIO
 from typing import Union, Iterator, List
@@ -136,6 +137,9 @@ def parse_answer(responses: List) -> dict:
         for parsed_answer in responses:
             question = parsed_answer[0]
             answer = parsed_answer[1]["data"]["answer"]
+            # remove substring such as ##d$$ from the answer, where d is a digit or digits
+            if answer:
+                answer = re.sub(r"##\d+\$\$", "", answer)
             reference = (
                 parsed_answer[1]["data"].get("reference", {}).get("doc_aggs", "")
             )
