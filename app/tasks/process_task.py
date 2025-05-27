@@ -105,7 +105,23 @@ def process_excel(self, filename: str, contents: bytes):
         )
         output_path = os.path.join(output_dir, output_filename)
         # Save the dataframe to an Excel file
-        df.to_excel(output_path, index=False)
+        with pd.ExcelWriter(output_path, engine="xlsxwriter") as writer:
+            df.to_excel(writer, index=False, sheet_name="SeismaTender")
+            workbook = writer.book
+            worksheet = writer.sheets["SeismaTender"]
+            # Define format for wrapped text
+            wrap_format = workbook.add_format({"text_wrap": True, "valign": "top"})
+
+            # Set column widths and apply text wrap
+            worksheet.set_column(
+                "A:A", settings.Q_COLUMN_WIDTH, wrap_format
+            )  # Column 'Requirement'
+            worksheet.set_column(
+                "B:B", settings.A_COLUMN_WIDTH, wrap_format
+            )  # Column 'Answer'
+            worksheet.set_column(
+                "C:C", settings.REF_COLUMN_WIDTH, wrap_format
+            )  # Column 'Reference'
 
         # Update final result
         task_result.status = TaskStatus.SUCCESS

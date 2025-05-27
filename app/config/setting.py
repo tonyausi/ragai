@@ -12,6 +12,9 @@ class Settings(BaseSettings):
     TENDER_KNOWLEDGE_BASE: str
     TENDER_QUESTION_HEADER: str
     PROCESSED_FILE_DIR: str
+    Q_COLUMN_WIDTH: int
+    A_COLUMN_WIDTH: int
+    REF_COLUMN_WIDTH: int
 
     class Config:
         env_file = ".env"
