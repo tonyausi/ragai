@@ -145,10 +145,10 @@ def parse_answer(responses: List) -> dict:
             )
             output["Requirement"].append(question)
             output["Supplier explanation / comments"].append(answer)
-            """if reference:
+            if reference:
                 ref_list = [ref["doc_name"] for ref in reference]
                 # concate strings in ref_list with '\n'
-                reference = "\n".join(ref_list)"""
+                reference = "\n".join(ref_list)
             output["Reference"].append(reference)
         return output
     else:
