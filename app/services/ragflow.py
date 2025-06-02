@@ -7,7 +7,7 @@ from ragflow_sdk.modules.session import Message
 from ragflow_sdk import RAGFlow, Session, Chat
 from app.config.setting import settings
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("celery")
 
 RAGFLOW_API_KEY = settings.RAGFLOW_API_KEY
 RAGFLOW_BASE_URL = settings.RAGFLOW_BASE_URL

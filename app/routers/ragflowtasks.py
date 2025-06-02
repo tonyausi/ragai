@@ -23,7 +23,7 @@ async def heartbeat():
     # check if redis is running
     try:
         celery_app.control.ping(timeout=1)
-        logger.info("Redis is running")
+        logger.debug("Redis is running")
         return {"status": "ok"}
     except Exception as e:
         logger.error(f"Redis is not running: {e}")
