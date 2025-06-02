@@ -135,6 +135,7 @@ def parse_answer(responses: List) -> dict:
     }
     if responses:
         for parsed_answer in responses:
+            logger.info(f"parsed_answer: {parsed_answer}")
             question = parsed_answer[0]
             answer = parsed_answer[1]["data"]["answer"]
             # remove substring such as ##d$$ from the answer, where d is a digit or digits
