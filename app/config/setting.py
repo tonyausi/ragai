@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     Q_COLUMN_WIDTH: int
     A_COLUMN_WIDTH: int
     REF_COLUMN_WIDTH: int
+    GEMINI_API_KEY: str
 
     class Config:
         env_file = ".env"

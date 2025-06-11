@@ -35,6 +35,7 @@ services:
       # Avoid mounting app code in production (interferes with Dockerfile COPY)
       # For development only:
       - ./app:/ragaiapi/app
+      - ./.env:/ragaiapi/.env
       - ./tests:/ragaiapi/tests
       - ./conftest.py:/ragaiapi/conftest.py
       - ./pytest.ini:/ragaiapi/pytest.ini
