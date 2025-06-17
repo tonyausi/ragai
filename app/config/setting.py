@@ -11,6 +11,9 @@ class Settings(BaseSettings):
     RAGFLOW_STREAM: str
     TENDER_KNOWLEDGE_BASE: str
     TENDER_QUESTION_HEADER: str
+    VENDOR_QUESTION_HEADER: str
+    PUBLIC_LLM_MODEL: str
+    NULL_RAGFLOW_ANSWER: str
     PROCESSED_FILE_DIR: str
     Q_COLUMN_WIDTH: int
     A_COLUMN_WIDTH: int

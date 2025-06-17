@@ -42,6 +42,6 @@ def test_query_google_gemini_custom_api_key(monkeypatch):
         assert result == "Paris"
 
 
-def _test_query_google_gemini_real_api_key_used():
+def test_query_google_gemini_real_api_key_used():
     result = query_google_gemini("What is the capital of China?")
     print(f"Result: {result}")

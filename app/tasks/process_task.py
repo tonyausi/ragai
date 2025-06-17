@@ -10,15 +10,15 @@ from app.services.ragflow import (
     parse_input_file,
     get_chat_assistant_session,
     ask_question_to_chat_assistant,
-    parse_answers,
+    parse_single_answer,
 )
+from app.services.gemini import query_google_gemini
 
 
 logger = get_task_logger(__name__)
 # Temporary storage (replace with Redis/DB in production)
 tasks = {}
-RAGFLOW_STREAM = settings.RAGFLOW_STREAM
-stream = RAGFLOW_STREAM.lower() == "true"  # Convert to boolean
+stream = settings.RAGFLOW_STREAM.lower() == "true"  # Convert to boolean
 
 
 @celery_app.task(bind=True)
@@ -58,7 +58,11 @@ def process_excel(self, filename: str, contents: bytes):
         logger.info(f"After set chat session, Task result: {task_result}")
 
         # Step 3: Ask the question to the chat assistant
-        responses = []
+        parsed_responses = {
+            "Requirement": [],
+            "Supplier explanation / comments": [],
+            "Reference": [],
+        }
         total_questions = len(requirements)
         for i in range(total_questions):
             question_raw = requirements[i]
@@ -69,8 +73,58 @@ def process_excel(self, filename: str, contents: bytes):
             single_answer = ask_question_to_chat_assistant(
                 session=session, question=question_raw, stream=stream
             )
+            need_public_llm = True
             if single_answer:
-                responses.append([question_raw, single_answer])
+                # Step 4a: Extract the answers and references from the responses from RAGFlow
+                parsed_single_answer = parse_single_answer(single_answer)
+                ragflow_anwer = parsed_single_answer["Supplier explanation / comments"]
+                if (
+                    ragflow_anwer
+                    and settings.NULL_RAGFLOW_ANSWER
+                    not in ragflow_anwer.strip().lower()
+                ):
+                    # Append the parsed answers to the parsed_responses dictionaryragflow_anwer
+                    parsed_responses["Requirement"].append(question_raw)
+                    parsed_responses["Supplier explanation / comments"].append(
+                        parsed_single_answer["Supplier explanation / comments"]
+                    )
+                    parsed_responses["Reference"].append(
+                        parsed_single_answer["Reference"]
+                    )
+                    # Found in RAGFlow, no need to query public LLM
+                    need_public_llm = False
+            if need_public_llm:
+                # Step 4b: If no answer found in RAGFlow, query public LLM (default Google Gemini)
+                question = question_raw
+                if settings.VENDOR_QUESTION_HEADER not in question:
+                    question = settings.VENDOR_QUESTION_HEADER + question
+                    logger.info(f"Amended question for public LLM: {question}")
+                try:
+                    # Query public LLM (Google Gemini)
+                    single_answer = query_google_gemini(
+                        query=question, model=settings.PUBLIC_LLM_MODEL
+                    )
+                    if single_answer:
+                        # Append the public LLM answer to the parsed_responses dictionary
+                        parsed_responses["Requirement"].append(question_raw)
+                        parsed_responses["Supplier explanation / comments"].append(
+                            single_answer
+                        )
+                        parsed_responses["Reference"].append(settings.PUBLIC_LLM_MODEL)
+                    else:
+                        raise ValueError("No answer returned from public LLM.")
+                except Exception as e:
+                    logger.error(
+                        (
+                            f"Error querying public LLM {settings.PUBLIC_LLM_MODEL} "
+                            f"for question {question_raw}: {str(e)}"
+                        )
+                    )
+                    parsed_responses["Requirement"].append(question_raw)
+                    parsed_responses["Supplier explanation / comments"].append(
+                        "Error: Unable to get answer from RAG and public LLM."
+                    )
+                    parsed_responses["Reference"].append("Error")
 
             # Update progress
             task_result.progress = round((i + 1) / total_questions * 100, 1)
@@ -80,10 +134,6 @@ def process_excel(self, filename: str, contents: bytes):
             self.update_state(
                 state=TaskStatus.PROCESSING, meta=task_result.model_dump()
             )
-
-        # Step 4: Extract the answers and references from the responses
-        parsed_responses = parse_answers(responses)
-        # logger.info(f"parsed_responses: {parsed_responses}")
 
         # Step 5: Add the extracted information to the dataframe
         # initialize a new empty dataframe without using the original one

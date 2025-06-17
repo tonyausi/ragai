@@ -8,6 +8,7 @@ logger = logging.getLogger("celery")
 
 def query_google_gemini(
     query: str,
+    model: str = settings.PUBLIC_LLM_MODEL,
     api_key: str = settings.GEMINI_API_KEY,
 ) -> Union[str, None]:
     """
@@ -17,7 +18,7 @@ def query_google_gemini(
     client = genai.Client(api_key=api_key)
     try:
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model=model,
             contents=query,
         )
         return response.text

@@ -134,47 +134,24 @@ def parse_single_answer(response: List) -> dict:
         response (List): The response list from the chat assistant.
 
     Returns:
-        dict: Parsed answer containing question, answer text, and reference.
+        dict: Parsed answer containing answer text, and reference.
     """
     logger.info(f"RAG query response: {response}")
-    question = response[0]
     try:
-        response_text = response[1]["data"]["answer"]
+        response_text = response["data"]["answer"]
         # remove substring such as ##d$$ from the response, where d is a digit or digits
         if response_text:
             response_text = re.sub(r"##\d+\$\$", "", response_text)
-        reference = response[1]["data"].get("reference", {}).get("doc_aggs", "")
+        reference = response["data"].get("reference", {}).get("doc_aggs", "")
         if reference:
             ref_list = [ref["doc_name"] for ref in reference]
             # concate strings in ref_list with '\n'
             reference = "\n".join(ref_list)
     except (IndexError, KeyError, TypeError) as e:
-        logger.error(f"Error parsing single answer: {e}")
+        logger.error(f"Error parsing single answer: {response} due to: {e}")
         response_text = ""
         reference = ""
     return {
-        "Requirement": question,
         "Supplier explanation / comments": response_text,
         "Reference": reference,
     }
-
-
-def parse_answers(responses: List) -> dict:
-    logger.info(f"responses: {responses}")
-    output = {
-        "Requirement": [],
-        "Supplier explanation / comments": [],
-        "Reference": [],
-    }
-    if responses:
-        for parsed_answer in responses:
-            parsed_single_answer = parse_single_answer(parsed_answer)
-            output["Requirement"].append(parsed_single_answer["Requirement"])
-            output["Supplier explanation / comments"].append(
-                parsed_single_answer["Supplier explanation / comments"]
-            )
-            output["Reference"].append(parsed_single_answer["Reference"])
-        return output
-    else:
-        logger.error("Failed to get response from RAG Flow API")
-        return {}
