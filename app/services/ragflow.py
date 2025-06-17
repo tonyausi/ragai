@@ -2,7 +2,7 @@ import logging
 import re
 import pandas as pd
 from io import BytesIO
-from typing import Union, Iterator, List
+from typing import List
 from ragflow_sdk.modules.session import Message
 from ragflow_sdk import RAGFlow, Session, Chat
 from app.config.setting import settings
@@ -126,7 +126,40 @@ def ask_questions_to_chat_assistant(
     return output
 
 
-def parse_answer(responses: List) -> dict:
+def parse_single_answer(response: List) -> dict:
+    """
+    Parse a single response from the chat assistant response.
+
+    Args:
+        response (List): The response list from the chat assistant.
+
+    Returns:
+        dict: Parsed answer containing question, answer text, and reference.
+    """
+    logger.info(f"RAG query response: {response}")
+    question = response[0]
+    try:
+        response_text = response[1]["data"]["answer"]
+        # remove substring such as ##d$$ from the response, where d is a digit or digits
+        if response_text:
+            response_text = re.sub(r"##\d+\$\$", "", response_text)
+        reference = response[1]["data"].get("reference", {}).get("doc_aggs", "")
+        if reference:
+            ref_list = [ref["doc_name"] for ref in reference]
+            # concate strings in ref_list with '\n'
+            reference = "\n".join(ref_list)
+    except (IndexError, KeyError, TypeError) as e:
+        logger.error(f"Error parsing single answer: {e}")
+        response_text = ""
+        reference = ""
+    return {
+        "Requirement": question,
+        "Supplier explanation / comments": response_text,
+        "Reference": reference,
+    }
+
+
+def parse_answers(responses: List) -> dict:
     logger.info(f"responses: {responses}")
     output = {
         "Requirement": [],
@@ -135,22 +168,12 @@ def parse_answer(responses: List) -> dict:
     }
     if responses:
         for parsed_answer in responses:
-            logger.info(f"parsed_answer: {parsed_answer}")
-            question = parsed_answer[0]
-            answer = parsed_answer[1]["data"]["answer"]
-            # remove substring such as ##d$$ from the answer, where d is a digit or digits
-            if answer:
-                answer = re.sub(r"##\d+\$\$", "", answer)
-            reference = (
-                parsed_answer[1]["data"].get("reference", {}).get("doc_aggs", "")
+            parsed_single_answer = parse_single_answer(parsed_answer)
+            output["Requirement"].append(parsed_single_answer["Requirement"])
+            output["Supplier explanation / comments"].append(
+                parsed_single_answer["Supplier explanation / comments"]
             )
-            output["Requirement"].append(question)
-            output["Supplier explanation / comments"].append(answer)
-            if reference:
-                ref_list = [ref["doc_name"] for ref in reference]
-                # concate strings in ref_list with '\n'
-                reference = "\n".join(ref_list)
-            output["Reference"].append(reference)
+            output["Reference"].append(parsed_single_answer["Reference"])
         return output
     else:
         logger.error("Failed to get response from RAG Flow API")

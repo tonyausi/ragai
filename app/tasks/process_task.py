@@ -10,7 +10,7 @@ from app.services.ragflow import (
     parse_input_file,
     get_chat_assistant_session,
     ask_question_to_chat_assistant,
-    parse_answer,
+    parse_answers,
 )
 
 
@@ -82,7 +82,7 @@ def process_excel(self, filename: str, contents: bytes):
             )
 
         # Step 4: Extract the answers and references from the responses
-        parsed_responses = parse_answer(responses)
+        parsed_responses = parse_answers(responses)
         # logger.info(f"parsed_responses: {parsed_responses}")
 
         # Step 5: Add the extracted information to the dataframe
