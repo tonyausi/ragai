@@ -10,9 +10,20 @@ setup_logging(app_logging_config_path)  # apply YAML config to the logging modul
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
 
-app = FastAPI(title="RAG AI API", version="1.0.0")
-# add CORS middleware to allow all origins, methods, and headers for now
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await redis_client.connect()  # Initialize Redis connection
+    try:
+        yield
+    finally:
+        await redis_client.disconnect()  # Close Redis connection
+
+
+app = FastAPI(title="RAG AI API", version="1.0.0", lifespan=lifespan)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -20,17 +31,5 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["*"],
 )
-# Include the router with optional prefix
-# Include the router with optional prefix
+
 app.include_router(ragflowtasks.router, prefix="/api")
-
-
-# Add Redis lifecycle events
-@app.on_event("startup")
-async def startup():
-    await redis_client.connect()  # Initialize Redis connection
-
-
-@app.on_event("shutdown")
-async def shutdown():
-    await redis_client.disconnect()  # Close Redis connection
